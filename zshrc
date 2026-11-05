@@ -5,12 +5,19 @@ export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.cargo/bin:$HOME/.flutte
 export PATH="/opt/homebrew/opt/python/libexec/bin:$PATH"
 
 # JAVA
-export JAVA_HOME=$(/usr/libexec/java_home)
-export CPPFLAGS="-I/opt/homebrew/opt/openjdk/include"
+if [[ -x /usr/libexec/java_home ]]; then
+  JAVA_HOME_PATH="$(/usr/libexec/java_home 2>/dev/null || true)"
+  if [[ -n "${JAVA_HOME_PATH}" ]]; then
+    export JAVA_HOME="${JAVA_HOME_PATH}"
+    export CPPFLAGS="-I/opt/homebrew/opt/openjdk/include"
+  fi
+fi
 
 # Node version manager (fnm: drop-in NVM replacement, ~40x faster startup)
 # Migrate versions once: fnm install <version> for each node version you used
-eval "$(fnm env --use-on-cd --shell zsh)"
+if command -v fnm >/dev/null 2>&1; then
+  eval "$(fnm env --use-on-cd --shell zsh)"
+fi
 
 # History
 HISTFILE=~/.zsh_history
@@ -106,31 +113,32 @@ alias '?'='noglob _q'
 alias omlx-models="curl -s http://127.0.0.1:8000/v1/models | jq -r"
 
 # Plugins
-source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
-source ~/.zsh/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh
-source ~/.zsh/zsh-git-alias.zsh
-source ~/.zsh/gcmai.zsh
+[ -f ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
+[ -f ~/.zsh/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh ] && source ~/.zsh/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh
+[ -f ~/.zsh/zsh-git-alias.zsh ] && source ~/.zsh/zsh-git-alias.zsh
+[ -f ~/.zsh/gcmai.zsh ] && source ~/.zsh/gcmai.zsh
 
 # fzf shell integration (Ctrl+R: fuzzy history, Ctrl+T: fuzzy files, Alt+C: fuzzy cd)
-source <(fzf --zsh)
+if command -v fzf >/dev/null 2>&1; then
+  source <(fzf --zsh)
+  bindkey '^b' fzf-history-widget
+fi
 
 # zoxide: smarter cd with frecency (z <query>, zi for interactive picker, zh for home)
-eval "$(zoxide init zsh)"
-
-# Keybinding swaps: Ctrl+B opens fzf history, Ctrl+R opens zoxide interactive folder switcher
-bindkey '^b' fzf-history-widget
-bindkey -s '^r' 'zi\n'
-
-# Jump to home directory via Ctrl+H (or zh alias)
-bindkey -s '^h' 'z ~\n'
-alias zh='z ~'
-
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init zsh)"
+  bindkey -s '^r' 'zi\n'
+  bindkey -s '^h' 'z ~\n'
+  alias zh='z ~'
+fi
 
 # Starship
 export STARSHIP_CONFIG="$HOME/.config/starship.toml"
 export STARSHIP_DISABLE_TELEMETRY=true
 
-eval "$(starship init zsh)"
+if command -v starship >/dev/null 2>&1; then
+  eval "$(starship init zsh)"
+fi
 
 # ZSH options
 setopt autocd
