@@ -1,3 +1,6 @@
 .DS_Store
-*.local.lua
 *.backup*
+*.local.lua
+.zshrc.local
+*.local.zsh
+.secrets*

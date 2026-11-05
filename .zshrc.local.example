@@ -1,0 +1,12 @@
+# Local environment variables and secrets (not tracked in Git)
+# Copy this file to ~/.zshrc.local and populate with your credentials:
+#   cp .zshrc.local.example ~/.zshrc.local
+#   chmod 600 ~/.zshrc.local
+
+# Project-specific credentials
+# export PULUMI_CONFIG_PASSPHRASE=""
+
+# AI Provider API Keys
+# export AI_GATEWAY_API_KEY=""
+# export OPENROUTER_API_KEY=""
+# export ELEVENLABS_API_KEY=""
