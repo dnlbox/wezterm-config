@@ -1,15 +1,35 @@
-# PATH setup
-export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$HOME/.cargo/bin:$HOME/.flutter/flutter/bin:$HOME/Library/Android/sdk/emulator:$HOME/Library/Android/sdk/platform-tools:$HOME/.local/bin:$PATH"
+# Discover Homebrew from PATH or its standard macOS locations.
+if ! command -v brew >/dev/null 2>&1 && [[ "$OSTYPE" == darwin* ]]; then
+  for brew_bin in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+    [[ -x "$brew_bin" ]] || continue
+    eval "$("$brew_bin" shellenv zsh)"
+    break
+  done
+  unset brew_bin
+fi
 
-# Override macOS's /usr/bin/python
-export PATH="/opt/homebrew/opt/python/libexec/bin:$PATH"
+android_sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}"
+tool_paths=()
+for bin_dir in "$HOME/.cargo/bin" "${FLUTTER_ROOT:-$HOME/.flutter/flutter}/bin" \
+  "$android_sdk/emulator" "$android_sdk/platform-tools" "$HOME/.local/bin"; do
+  [[ -d "$bin_dir" ]] && tool_paths+=("$bin_dir")
+done
+path=("${tool_paths[@]}" "${path[@]}")
+unset android_sdk bin_dir tool_paths
+
+if command -v brew >/dev/null 2>&1; then
+  brew_prefix="$(brew --prefix)"
+  [[ -d "$brew_prefix/opt/python/libexec/bin" ]] && path=("$brew_prefix/opt/python/libexec/bin" "${path[@]}")
+  [[ -d "$brew_prefix/opt/libpq/bin" ]] && path=("$brew_prefix/opt/libpq/bin" "${path[@]}")
+  unset brew_prefix
+fi
 
 # JAVA
 if [[ -x /usr/libexec/java_home ]]; then
   JAVA_HOME_PATH="$(/usr/libexec/java_home 2>/dev/null || true)"
   if [[ -n "${JAVA_HOME_PATH}" ]]; then
     export JAVA_HOME="${JAVA_HOME_PATH}"
-    export CPPFLAGS="-I/opt/homebrew/opt/openjdk/include"
+    export CPPFLAGS="-I${JAVA_HOME}/include${CPPFLAGS:+ ${CPPFLAGS}}"
   fi
 fi
 
@@ -133,7 +153,7 @@ if command -v zoxide >/dev/null 2>&1; then
 fi
 
 # Starship
-export STARSHIP_CONFIG="$HOME/.config/starship.toml"
+export STARSHIP_CONFIG="${STARSHIP_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml}"
 export STARSHIP_DISABLE_TELEMETRY=true
 
 if command -v starship >/dev/null 2>&1; then
@@ -154,29 +174,21 @@ export DOTNET_CLI_TELEMETRY_OPTOUT=true
 #   if [[ $exit_code -ne 0 ]]; then
 #     echo "[precmd hook] Last command exited with code: $exit_code"
 #   fi
-#   # Set terminal tab title to current folder name (e.g. "va-redirector", not full path)
+#   # Set the terminal tab title to the current folder name.
 #   print -Pn "\e]0;%1~\a"
 # }
 
 # General utils
 alias nuke_docker="docker stop \$(docker ps -aq) 2>/dev/null || true && docker rm \$(docker ps -aq) 2>/dev/null || true && docker rmi -f \$(docker images -q) 2>/dev/null || true && docker volume rm \$(docker volume ls -q) 2>/dev/null || true && docker network prune -f 2>/dev/null || true && docker system prune -a --volumes -f"
 
-# Postgress
-export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
-
-# Added by Antigravity
-export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
-
 # pnpm
-export PNPM_HOME="$HOME/Library/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME/bin:"*) ;;
-  *) export PATH="$PNPM_HOME/bin:$PNPM_HOME:$PATH" ;;
-esac
-# pnpm end
-
-# Added by Antigravity IDE
-export PATH="$HOME/.antigravity-ide/antigravity-ide/bin:$PATH"
+if [[ -z "${PNPM_HOME:-}" && "$OSTYPE" == darwin* && -d "$HOME/Library/pnpm" ]]; then
+  export PNPM_HOME="$HOME/Library/pnpm"
+fi
+if [[ -n "${PNPM_HOME:-}" ]]; then
+  [[ -d "$PNPM_HOME" && ":${PATH}:" != *":$PNPM_HOME:"* ]] && path=("$PNPM_HOME" "${path[@]}")
+  [[ -d "$PNPM_HOME/bin" && ":${PATH}:" != *":$PNPM_HOME/bin:"* ]] && path=("$PNPM_HOME/bin" "${path[@]}")
+fi
 
 # Local environment variables and secrets (not committed to version control)
 [ -f "$HOME/.zshrc.local" ] && source "$HOME/.zshrc.local"

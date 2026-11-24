@@ -4,3 +4,6 @@
 .zshrc.local
 *.local.zsh
 .secrets*
+.env
+.env.*
+!.env.example
